@@ -30,17 +30,34 @@ namespace ArdeshirV.Tools.CSV
             public CSVLine(string Line, string Seperator = ",")
             {
                 stringSeperator = Seperator;
-                if (Line == null || Line == string.Empty || Line.Length <= 0)
+                if (string.IsNullOrEmpty(Line) || Line.Length <= 0)
                     stringArrItems = new string[] { };
-                else
+                else {
+                    int index = 0;
                     stringArrItems = Line.Split(new string[] { Seperator }, StringSplitOptions.None);
+                    foreach (string str in stringArrItems)
+                        stringArrItems[index++] = RemoveQuotes(str.Trim(), new char []{ '\"' });
+                }
+            }
+            private string RemoveQuotes(string strWithQuotes, char[] quotes)
+            {
+                string result = strWithQuotes;
+                foreach (char quote in quotes)
+                {
+                    int index = result.IndexOf(quote);
+                    int LastIndex = result.LastIndexOf(quote);
+                    if (index != -1 && LastIndex != -1 && index != LastIndex)
+                        result = result.Substring(index + 1, LastIndex - index - 1);
+                    // System.Windows.Forms.MessageBox.Show(result);  // Test
+                }
+                return result;
             }
 
             public string this[int intFieldIndex]
             {
                 get
                 {
-                    if (Items.Length < intFieldIndex || intFieldIndex < 0)
+                    if (Items.Length <= intFieldIndex || intFieldIndex < 0)
                         throw new IndexOutOfRangeException(string.Format(
                             "Error: index={0} is out of range of CSVLine object in \"this[int]\" operator", intFieldIndex));
                     return Items[intFieldIndex];
@@ -72,7 +89,7 @@ namespace ArdeshirV.Tools.CSV
             {
                 foreach (string head in Heads)
                     if (IndexOf(head, ignoreCase) < 0)
-                        return false;
+                		return false;
                 return true;
             }
 
@@ -133,7 +150,7 @@ namespace ArdeshirV.Tools.CSV
         /// <param name="IsHeaderExists">Is there any header in specified CSV file?</param>
         /// <param name="DetectHeader">Callback method that detect header by processing each line of CSV file</param>
         /// <param name="Seperator">The seperator between CSV file columns</param>
-        public CSV(string stringCSVFilePathName, bool IsHeaderExists = false,
+        public CSV(string stringCSVFilePathName, bool IsHeaderExists,
                    DetectHeaderCallback DetectHeader = null, string Seperator = ",")
         {
             this.stringSeperator = Seperator;
@@ -284,7 +301,19 @@ namespace ArdeshirV.Tools.CSV
             }
         }
 
-        public CSVLine Header { get; private set; }
+        public CSVLine this[int intLineNumer]
+        {
+            get
+            {
+                return CSVLineBody[intLineNumer];
+            }
+            set
+            {
+                CSVLineBody[intLineNumer] = value;
+            }
+        }
+
+        public CSVLine Header { get; set; }
 
         public CSVLine[] Comments
         {
