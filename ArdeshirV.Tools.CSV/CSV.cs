@@ -72,8 +72,8 @@ namespace ArdeshirV.Tools.CSV
             {
                 get
                 {
-                    int intFieldNumber = IndexOf(stringHeadName);
-                    if (intFieldNumber < 0)
+                    int intFieldNumber = IndexOf(stringHeadName, false);
+                    if (intFieldNumber < 0 || intFieldNumber >= Items.Length)
                         throw new IndexOutOfRangeException(string.Format(
                             "Error: \"{0}\" is not exists in CSVLine object that accessed with \"this[string]\" operator", stringHeadName));
                     return intFieldNumber;
@@ -134,10 +134,10 @@ namespace ArdeshirV.Tools.CSV
             }
         }
 
-        private string CSVFileName;
         private CSVLine[] CSVLineBody;
         private bool boolIsHeaderExists;
         private CSVLine[] CSVLineComments;
+        private string CSVFileName;
         private readonly string stringSeperator;
         private DetectHeaderCallback DetectHeader;
 
@@ -156,12 +156,40 @@ namespace ArdeshirV.Tools.CSV
             this.stringSeperator = Seperator;
             this.DetectHeader = DetectHeader;
             this.boolIsHeaderExists = IsHeaderExists;
-            Load(stringCSVFilePathName);
+            Load(CSVFileName = stringCSVFilePathName);
+        }
+        
+        public CSV(CSV OtherCSV) {
+        	this.Header = OtherCSV.Header;
+        	this.CSVLineBody = OtherCSV.CSVLineBody;
+        	this.DetectHeader = OtherCSV.DetectHeader;
+        	this.CSVLineComments = OtherCSV.CSVLineComments;
+        	this.stringSeperator = OtherCSV.stringSeperator;
+        	this.boolIsHeaderExists = OtherCSV.boolIsHeaderExists;
+        	this.CSVFileName = OtherCSV.CSVFileName;
+        	//Load(OtherCSV.CSVFileName);
+        }
+        
+        public CSV(CSV OtherCSV, bool[] arrActiveFields) {
+        	this.Header = OtherCSV.Header;
+        	this.CSVLineBody = OtherCSV.CSVLineBody;
+        	this.DetectHeader = OtherCSV.DetectHeader;
+        	this.CSVLineComments = OtherCSV.CSVLineComments;
+        	this.stringSeperator = OtherCSV.stringSeperator;
+        	this.boolIsHeaderExists = OtherCSV.boolIsHeaderExists;
+        	this.CSVFileName = OtherCSV.CSVFileName;
+        	//Load(OtherCSV.CSVFileName);
+        	List<CSVLine> list = new List<CSVLine>();
+        	for(int index = 0; index < arrActiveFields.Length &&
+        	    index < OtherCSV.CSVLineBody.Length; index++)
+        		if(arrActiveFields[index])
+        			list.Add(OtherCSV.CSVLineBody[index]);
+        	this.CSVLineBody = list.ToArray();
         }
 
         public void Load(string stringCSVFilePathName)
         {
-            ImportLines(File.ReadAllLines(this.CSVFileName = stringCSVFilePathName));
+            ImportLines(File.ReadAllLines(stringCSVFilePathName));
         }
 
         public void Save()
@@ -171,7 +199,7 @@ namespace ArdeshirV.Tools.CSV
 
         public void SaveAs(string stringFileName)
         {
-            File.WriteAllLines(this.CSVFileName = stringFileName, ExportLines());
+            File.WriteAllLines(CSVFileName = stringFileName, ExportLines());
         }
 
         public override string ToString()
